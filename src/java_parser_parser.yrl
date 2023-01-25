@@ -6,6 +6,9 @@ Nonterminals
   import_decls
   import_name
   visibility
+  annotations
+  annotation
+  marker_annotation
   enum_decl
   enum_body
   enum_value
@@ -25,6 +28,7 @@ Terminals
   package
   import
   fqn
+  annotation_name
   public
   private
   protected
@@ -39,6 +43,7 @@ Terminals
   ','
   '('
   ')'
+  '@'
 .
 
 Rootsymbol
@@ -61,8 +66,10 @@ block -> enum_decl : #{enum => '$1'}.
 block -> class_decl : #{class => '$1'}.
 
 % Enums
-enum_decl -> 'enum' identifier '{' enum_body '}' : make_enum('private', unwrap('$2'), '$4').
-enum_decl -> visibility 'enum' identifier '{' enum_body '}' : make_enum('$1', unwrap('$3'), '$5').
+enum_decl -> 'enum' identifier '{' enum_body '}' : #{visibility => 'private', name => unwrap('$2'), body => '$4', annotations => []}.
+enum_decl -> visibility 'enum' identifier '{' enum_body '}' : #{visibility => '$1', name => unwrap('$3'), body => '$5', annotations => []}.
+enum_decl -> annotations 'enum' identifier '{' enum_body '}' : #{visibility => 'private', name => unwrap('$3'), body => '$5', annotations => '$1'}.
+enum_decl -> annotations visibility 'enum' identifier '{' enum_body '}' : #{visibility => '$2', name => unwrap('$4'), body => '$6', annotations => '$1'}.
 
 enum_body -> enum_values : [{enum_values, '$1'}].
 enum_body -> enum_values class_block : [{enum_values, '$1'}] ++ '$2'.
@@ -96,7 +103,15 @@ method_sig -> type_name identifier '(' typed_args ')' : #{visibility => 'private
 method_sig -> visibility type_name identifier '(' ')' : #{visibility => unwrap('$1'), returns => unwrap('$2'), name => unwrap('$3'), args => []}.
 method_sig -> visibility type_name identifier '(' typed_args ')' : #{visibility => unwrap('$1'), returns => unwrap('$2'), name => unwrap('$3'), args => '$5'}.
 
-%% Generic rules
+% Annotations
+annotations -> annotation : ['$1'].
+annotations -> annotation annotations : ['$1'] ++ '$2'.
+
+annotation -> marker_annotation : '$1'.
+
+marker_annotation -> annotation_name : #{name => unwrap('$1'), args => []}.
+
+% Generic rules
 typed_args -> typed_arg : ['$1'].
 typed_args -> typed_arg ',' typed_args : ['$1'] ++ '$3'.
 
@@ -121,4 +136,3 @@ unwrap({_, _, Val}) -> Val;
 unwrap(Val) -> Val.
 
 make_class(Visibility, Name, Body) -> #{visibility => Visibility, name => Name, body => Body}.
-make_enum(Visibility, Name, Body) -> #{visibility => Visibility, name => Name, body => Body}.

@@ -25,6 +25,9 @@ defmodule TestData do
       enum: %{
         name: :FooEnum,
         visibility: :public,
+        annotations: [
+          %{name: :MarkerAnnotation, args: []}
+        ],
         body: [
           {
             :enum_values,
