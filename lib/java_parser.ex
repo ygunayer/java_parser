@@ -1,18 +1,12 @@
 defmodule JavaParser do
-  @moduledoc """
-  Documentation for `JavaParser`.
-  """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> JavaParser.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def parse(input) do
+    {:ok, tokens, _line} = input |> String.to_charlist() |> :java_parser_lexer.string()
+    :java_parser_parser.parse(tokens)
   end
+
+  def parse!(input), do: input |> parse() |> bangify!()
+
+  defp bangify!({:ok, result}), do: result
+  defp bangify!({:error, error}), do: raise(error)
+  defp bangify!(other), do: other
 end
