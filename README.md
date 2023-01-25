@@ -8,7 +8,51 @@ This is just a work-in-progress and is not meant for real world usage (at least 
 TBD
 
 ## Usage
-TBD
+Once included as a dependency, you can call `JavaParser.parse(string)` to parse any arbitrary string.
+
+### Example
+Given a Java file `FooEnum.java` called with the following contents:
+
+```java
+package com.yalingunayer.java_parser;
+
+public enum FooEnum {
+  FOO,
+  BAR
+}
+```
+
+The output of the code block
+
+```elixir
+{:ok, input} = File.read("FooEnum.java")
+{:ok, parsed} = JavaParser.parse(input)
+IO.inspect(parsed)
+```
+
+will be:
+
+```elixir
+%{
+  package: :"com.yalingunayer.java_parser",
+  imports: [],
+  enum: %{
+    name: :FooEnum,
+    visibility: :public,
+    body: [
+      {
+        :enum_values,
+        [
+          %{name: :FOO, args: []},
+          %{name: :BAR, args: []}
+        ]
+      }
+    ]
+  }
+}
+```
+
+See the unit tests at [test/](./test/) for more examples.
 
 ## Development
 ### Building
