@@ -11,6 +11,11 @@ public class FooClass {
   private String name;
   private final List<String> foos = List.of("foo", "bar");
 
+  /**
+   * Some JavaDoc here
+   *
+   * @return int the ID
+   */
   public int getId() {
     return this.id;
   }
@@ -21,5 +26,11 @@ public class FooClass {
 
   public List<String> getFooFoos() {
     return this.foos.stream().filter(foo -> "foo".equals(foo)).collect(Collectors::toList());
+  }
+
+  public int maxId(FooClass a, FooClass b) {
+    int idA = a.getId();
+    int idB = b.getId();
+    return Math.max(idA, idB);
   }
 }

@@ -7,5 +7,9 @@ package com.yalingunayer.java_parser;
 public enum FooEnum {
   // another comment
   FOO,
+
+  /**
+   * And a streaming comment
+   */
   BAR
 }

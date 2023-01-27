@@ -1,41 +1,76 @@
 Nonterminals
   root
-  block
-  package_decl
-  import_decl
-  import_decls
-  import_name
-  visibility
-  annotations
-  annotation
-  marker_annotation
-  enum_decl
-  enum_body
+  package_stmt
+  import_stmt
+  import_stmts
+
+  top_block
+
+  class_block
+  class_signature
+  class_marker
+  class_inheritance
+  class_body
+  class_body_item
+
+  enum_block
+  enum_signature
   enum_value
   enum_values
-  class_decl
-  class_body
-  class_block
+  enum_marker
+  enum_inheritance
+
   field
-  type_name
-  typed_arg
+  value
+  expr
+  chainable_expr
+  lambda_expr
+  expr_list
+  method_call
+
+  method_block
+  method_signature
   typed_args
-  method_decl
-  method_sig
+  method_body
+  method_body_item
+
+  annotation
+  annotations
+  visibility
+  type
+  type_list
+
+  fqn
+  fqn_list
 .
 
 Terminals
   package
   import
-  fqn
-  annotation_name
   public
   private
   protected
-  enum
-  identifier
-  class
+  static
   final
+  enum
+  class
+  extends
+  implements
+  return
+  new
+  abstract
+
+  true
+  false
+  null
+
+  identifier
+  wildcard_import
+  string_literal
+  integer
+  float
+  annotation_name
+
   '.*'
   ';'
   '{'
@@ -43,96 +78,230 @@ Terminals
   ','
   '('
   ')'
-  '@'
+  '='
+  '<'
+  '>'
+  '.'
+  '+'
+  '-'
+  '*'
+  '/'
+  '&&'
+  '||'
+  '=='
+  '!='
+  '&'
+  '|'
+  '!'
+  '::'
+  '->'
+  '['
+  ']'
+  '...'
 .
 
 Rootsymbol
   root
 .
 
-% Top level rules
-root -> package_decl block : maps:merge(#{package => '$1', imports => []}, '$2').
-root -> package_decl import_decls : #{package => '$1', imports => '$2'}.
-root -> package_decl import_decls block : maps:merge(#{package => '$1', imports => '$2'}, '$3').
+Unary 100 '!'.
+Right 100 '='.
+Left 300 '+'.
+Left 300 '-'.
+Left 400 '*'.
+Left 400 '/'.
+Left 500 '&'.
+Left 500 '|'.
+Left 500 '&&'.
+Left 500 '||'.
+Left 500 '=='.
+Left 500 '!='.
 
-package_decl -> 'package' fqn ';' : binary_to_atom(unwrap('$2')).
+% Top level blocks
+root -> package_stmt : #{package => '$1', imports => []}.
+root -> package_stmt top_block : maps:merge(#{package => '$1', imports => []}, '$2').
+root -> package_stmt import_stmts top_block : maps:merge(#{package => '$1', imports => '$2'}, '$3').
 
-import_decl -> 'import' import_name ';' : unwrap('$2').
-import_decls -> import_decl : ['$1'].
-import_decls -> import_decl import_decls : ['$1'] ++ '$2'.
+package_stmt -> 'package' fqn ';' : '$2'.
 
-% Main Block
-block -> enum_decl : #{enum => '$1'}.
-block -> class_decl : #{class => '$1'}.
+import_stmt -> 'import' fqn ';' : '$2'.
+import_stmt -> 'import' wildcard_import ';' : string:split(unwrap('$2'), <<".">>, all).
 
-% Enums
-enum_decl -> 'enum' identifier '{' enum_body '}' : #{visibility => 'private', name => unwrap('$2'), body => '$4', annotations => []}.
-enum_decl -> visibility 'enum' identifier '{' enum_body '}' : #{visibility => '$1', name => unwrap('$3'), body => '$5', annotations => []}.
-enum_decl -> annotations 'enum' identifier '{' enum_body '}' : #{visibility => 'private', name => unwrap('$3'), body => '$5', annotations => '$1'}.
-enum_decl -> annotations visibility 'enum' identifier '{' enum_body '}' : #{visibility => '$2', name => unwrap('$4'), body => '$6', annotations => '$1'}.
+import_stmts -> import_stmt : ['$1'].
+import_stmts -> import_stmt import_stmts : ['$1'] ++ '$2'.
 
-enum_body -> enum_values : [{enum_values, '$1'}].
-enum_body -> enum_values class_block : [{enum_values, '$1'}] ++ '$2'.
+top_block -> class_block : #{class => '$1'}.
+top_block -> enum_block : #{enum => '$1'}.
+
+% Top Level Class Block
+class_block -> class_signature '{' '}' : maps:merge('$1', #{body => []}).
+class_block -> class_signature '{' class_body '}' : maps:merge('$1', #{body => '$3'}).
+
+class_signature -> class_marker : '$1'.
+class_signature -> annotations class_marker : maps:merge(#{annotations => '$1'}, '$2').
+class_signature -> annotations class_marker class_inheritance : maps:merge(#{annotations => '$1', inheritance => '$3'}, '$2').
+
+class_marker -> 'class' identifier : #{name => unwrap('$2')}.
+class_marker -> 'abstract' 'class' identifier : #{name => unwrap('$3'), abstract => true}.
+class_marker -> 'final' 'class' identifier : #{name => unwrap('$3'), final => true}.
+class_marker -> visibility 'class' identifier : #{name => unwrap('$3'), visibility => '$1'}.
+class_marker -> visibility 'abstract' 'class' identifier : #{name => unwrap('$4'), visibility => '$1', abstract => true}.
+class_marker -> visibility 'final' 'class' identifier : #{name => unwrap('$4'), visibility => '$1', final => true}.
+
+class_inheritance -> 'extends' fqn : #{extends => '$2'}.
+class_inheritance -> 'implements' fqn_list : #{implements => '$2'}.
+class_inheritance -> 'extends' fqn 'implements' fqn_list : #{extends => '$2', implements => '$4'}.
+
+class_body -> class_body_item : ['$1'].
+class_body -> class_body_item class_body : ['$1'] ++ '$2'.
+
+class_body_item -> field ';' : {field, '$1'}.
+class_body_item -> method_block : {method, '$1'}.
+
+% Top Level Enum Block
+enum_block -> enum_signature '{' '}' : maps:merge('$1', #{values => []}).
+enum_block -> enum_signature '{' enum_values '}' : maps:merge('$1', #{values => '$3'}).
+enum_block -> enum_signature '{' enum_values ';' '}' : maps:merge('$1', #{values => '$3'}).
+enum_block -> enum_signature '{' enum_values ';' class_body '}' : maps:merge('$1', #{values => '$3', body => '$5'}).
+
+enum_signature -> enum_marker : '$1'.
+enum_signature -> annotations enum_marker : maps:merge(#{annotations => '$1'}, '$2').
+enum_signature -> annotations enum_marker enum_inheritance : maps:merge(#{annotations => '$1', inheritance => '$3'}, '$2').
+
+enum_marker -> 'enum' identifier : #{name => unwrap('$2')}.
+enum_marker -> visibility 'enum' identifier : #{name => unwrap('$3'), visibility => '$1'}.
+
+enum_inheritance -> 'extends' fqn : #{extends => '$2'}.
+enum_inheritance -> 'implements' fqn_list : #{implements => '$2'}.
+enum_inheritance -> 'extends' fqn 'implements' fqn_list : #{extends => '$2', implements => '$4'}.
 
 enum_values -> enum_value : ['$1'].
-enum_values -> enum_value ';' : ['$1'].
 enum_values -> enum_value ',' enum_values : ['$1'] ++ '$3'.
-enum_values -> enum_value ',' enum_values ';' : ['$1'] ++ '$3'.
 
-enum_value -> identifier : #{name => unwrap('$1'), args => []}.
-enum_value -> identifier '(' typed_args ')' : #{name => unwrap('$1'), args => '$3'}.
-
-% Classes
-class_decl -> 'class' identifier '{' '}' : make_class('private', unwrap('$2'), []).
-class_decl -> 'class' identifier '{' class_body '}' : make_class('private', unwrap('$2'), unwrap('$4')).
-class_decl -> visibility 'class' identifier '{' '}' : make_class(unwrap('$1'), unwrap('$3'), []).
-class_decl -> visibility 'class' identifier '{' class_body '}' : make_class(unwrap('$1'), unwrap('$3'), unwrap('$5')).
-
-class_body -> class_block : ['$1'].
-class_body -> class_block class_body : ['$1'] ++ '$2'.
-
-class_block -> field ';' : {field, '$1'}.
-class_block -> method_decl : {method, '$1'}.
+enum_value -> identifier : unwrap('$1').
+enum_value -> identifier '(' ')' : {unwrap('$1'), []}.
+enum_value -> identifier '(' expr_list ')' : {unwrap('$1'), '$3'}.
 
 % Methods
-method_decl -> method_sig '{' '}' : maps:merge('$1', #{body => []}).
-%method_decl -> method_sig '{' method_body '}' : maps:merge('$1', #{body => []}).
+method_block -> method_signature '{' '}' : maps:merge(#{body => []}, '$1').
+method_block -> method_signature '{' method_body '}' : maps:merge(#{body => '$3'}, '$1').
 
-method_sig -> type_name identifier '(' ')' : #{visibility => 'private', returns => unwrap('$1'), name => unwrap('$2'), args => []}.
-method_sig -> type_name identifier '(' typed_args ')' : #{visibility => 'private', returns => unwrap('$1'), name => unwrap('$2'), args => '$4'}.
-method_sig -> visibility type_name identifier '(' ')' : #{visibility => unwrap('$1'), returns => unwrap('$2'), name => unwrap('$3'), args => []}.
-method_sig -> visibility type_name identifier '(' typed_args ')' : #{visibility => unwrap('$1'), returns => unwrap('$2'), name => unwrap('$3'), args => '$5'}.
+method_signature -> type identifier '(' ')' : #{type => '$1', name => unwrap('$2'), args => []}.
+method_signature -> type identifier '(' typed_args ')' : #{type => '$1', name => unwrap('$2'), args => '$4'}.
+method_signature -> 'static' type identifier '(' ')' : #{type => '$2', name => unwrap('$3'), args => [], static => true}.
+method_signature -> 'static' type identifier '(' typed_args ')' : #{type => '$2', name => unwrap('$3'), args => '$5', static => true}.
+method_signature -> visibility type identifier '(' ')' : #{type => '$2', name => unwrap('$3'), args => [], visibility => '$1'}.
+method_signature -> visibility type identifier '(' typed_args ')' : #{type => '$2', name => unwrap('$3'), args => '$5', visibility => '$1'}.
+method_signature -> visibility 'static' type identifier '(' ')' : #{type => '$2', name => unwrap('$3'), args => [], visibility => '$1', static => true}.
+method_signature -> visibility 'static' type identifier '(' typed_args ')' : #{type => '$3', name => unwrap('$4'), args => '$6', visibility => '$1', static => true}.
 
-% Annotations
+typed_args -> type identifier : [#{type => '$1', name => unwrap('$2')}].
+typed_args -> type identifier ',' typed_args : [#{type => '$1', name => unwrap('$2')}] ++ '$4'.
+typed_args -> 'final' type identifier : [#{type => '$2', final => true, name => unwrap('$3')}].
+typed_args -> 'final' type identifier ',' typed_args : [#{type => '$2', final => true, name => unwrap('$3')}] ++ '$5'.
+
+method_body -> method_body_item ';' : ['$1'].
+method_body -> method_body_item ';' method_body : ['$1'] ++ '$3'.
+
+method_body_item -> type identifier : {var, #{type => '$1', name => unwrap('$2')}}.
+method_body_item -> type identifier '=' expr : {var, #{type => '$1', name => unwrap('$2'), value => '$4'}}.
+method_body_item -> 'final' type identifier '=' expr : {var, #{type => '$2', name => unwrap('$3'), value => '$5', final => true}}.
+method_body_item -> 'return' expr : {return, '$2'}.
+
+% Fields
+field -> type identifier : #{visibility => 'private', type => '$1', name => unwrap('$2')}.
+field -> visibility type identifier :  #{visibility => '$1', type => '$2', name => unwrap('$3')}.
+field -> visibility 'static' type identifier :  #{visibility => '$1', static => true, type => '$3', name => unwrap('$4')}.
+field -> visibility 'final' type identifier :  #{visibility => '$1', final => true, type => '$3', name => unwrap('$4')}.
+field -> visibility 'static' 'final' type identifier :  #{visibility => '$1', static => true, final => true, type => '$4', name => unwrap('$5')}.
+
+field -> type identifier '=' expr : #{visibility => 'private', type => '$1', name => unwrap('$2'), default => '$4'}.
+field -> visibility type identifier '=' expr :  #{visibility => '$1', type => '$2', name => unwrap('$3'), default => '$5'}.
+field -> visibility 'static' type identifier '=' expr :  #{visibility => '$1', static => true, type => '$3', name => unwrap('$4'), default => '$6'}.
+field -> visibility 'final' type identifier '=' expr :  #{visibility => '$1', final => true, type => '$3', name => unwrap('$4'), default => '$6'}.
+field -> visibility 'static' 'final' type identifier '=' expr :  #{visibility => '$1', static => true, final => true, type => '$4', name => unwrap('$5'), default => '$7'}.
+
+% Values & Expressions
+value -> integer : unwrap('$1').
+value -> float : unwrap('$1').
+value -> string_literal : unwrap('$1').
+value -> true : unwrap('$1').
+value -> false : unwrap('$1').
+value -> 'null' : unwrap('$1').
+
+expr -> '!' expr : {'!', '$2'}.
+expr -> chainable_expr : '$1'.
+expr -> expr '+' expr : {'+', '$1', '$3'}.
+expr -> expr '-' expr : {'-', '$1', '$3'}.
+expr -> expr '*' expr : {'*', '$1', '$3'}.
+expr -> expr '/' expr : {'/', '$1', '$3'}.
+expr -> expr '==' expr : {'==', '$1', '$3'}.
+expr -> expr '!=' expr : {'!=', '$1', '$3'}.
+expr -> expr '&&' expr : {'&&', '$1', '$3'}.
+expr -> expr '||' expr : {'||', '$1', '$3'}.
+expr -> expr '&' expr : {'&', '$1', '$3'}.
+expr -> expr '|' expr : {'|', '$1', '$3'}.
+expr -> expr '.' expr : {chain, '$1'}.
+expr -> fqn '::' identifier : {method_ref, '$1', unwrap('$3')}.
+expr -> lambda_expr : {lambda, '$1'}.
+
+chainable_expr -> '(' expr ')' : '$2'.
+chainable_expr -> fqn : {ref, unwrap('$1')}.
+chainable_expr -> method_call : {call, '$1'}.
+chainable_expr -> value : '$1'.
+
+lambda_expr -> '(' ')' '->' expr : #{body => '$3', args => []}.
+lambda_expr -> '(' ')' '->' '{' method_body '}' : #{body => '$5', args => []}.
+lambda_expr -> identifier '->' expr  : #{body => '$3', args => [unwrap('$1')]}.
+lambda_expr -> identifier '->' '{' method_body '}' : #{body => '$4', args => [unwrap('$1')]}.
+lambda_expr -> '(' typed_args ')' '->' expr : #{body => '$5', args => '$2'}.
+lambda_expr -> '(' typed_args ')' '->' '{' method_body '}' : #{body => '$6', args => '$2'}.
+%lambda_expr -> '(' fqn_list ')' '->' '{' method_body '}' : #{body => '$6', args => '$2'}.
+
+expr_list -> expr : ['$1'].
+expr_list -> expr ',' expr_list : ['$1'] ++ '$3'.
+
+method_call -> 'new' fqn '(' ')' : {new, '$2', []}.
+method_call -> 'new' fqn '(' expr_list ')' : {new, '$2', '$4'}.
+method_call -> fqn '(' ')' : {'$1', []}.
+method_call -> fqn '(' expr_list ')' : {'$1', '$3'}.
+method_call -> fqn '.' identifier '(' ')' : {{'$1', unwrap('$3')}, []}.
+method_call -> fqn '.' identifier '(' expr_list ')' : {{'$1', unwrap('$3')}, '$4'}.
+method_call -> fqn '::' identifier '(' ')' : {{'::', '$1', unwrap('$3')}, []}.
+method_call -> fqn '::' identifier '(' expr_list ')' : {{'::', '$1', unwrap('$3')}, '$4'}.
+
+% Common
+annotation -> annotation_name : {unwrap('$1'), []}.
+annotation -> annotation_name '(' ')' : {unwrap('$1'), []}.
+
 annotations -> annotation : ['$1'].
 annotations -> annotation annotations : ['$1'] ++ '$2'.
 
-annotation -> marker_annotation : '$1'.
+visibility -> 'public' : public.
+visibility -> 'private' : private.
+visibility -> 'protected' : protected.
 
-marker_annotation -> annotation_name : #{name => unwrap('$1'), args => []}.
+type -> fqn : '$1'.
+type -> fqn '<' type_list '>' : {generic, '$1', '$3'}.
+type -> type '[' ']' : {array, '$1'}.
+type -> type '...' : {varargs, '$1'}.
 
-% Generic rules
-typed_args -> typed_arg : ['$1'].
-typed_args -> typed_arg ',' typed_args : ['$1'] ++ '$3'.
+type_list -> type : ['$1'].
+type_list -> type ',' type_list : ['$1'] ++ '$3'.
 
-typed_arg -> type_name identifier : #{type => unwrap('$1'), name => unwrap('$2'), final => false}.
-typed_arg -> 'final' type_name identifier : #{type => unwrap('$2'), name => unwrap('$3'), final => true}.
+% Utility
+fqn -> identifier : [unwrap('$1')].
+fqn -> identifier '.' fqn : [unwrap('$1')] ++ '$3'.
 
-visibility -> 'public' : unwrap('$1').
-visibility -> 'private' : unwrap('$1').
-visibility -> 'protected' : unwrap('$1').
-
-field -> typed_arg : maps:merge(#{visibility => 'private'}, '$1').
-field -> visibility typed_arg : maps:merge(#{visibility => 'private'}, '$2').
-
-type_name -> fqn : unwrap('$1').
-type_name -> identifier : unwrap('$1').
-
-import_name -> fqn : unwrap('$1').
-import_name -> fqn '.*' : list_to_binary([unwrap('$1'), unwrap('$2')]).
+fqn_list -> identifier : [unwrap('$1')].
+fqn_list -> identifier ',' fqn_list : [unwrap('$1')] ++ unwrap('$3').
 
 Erlang code.
 unwrap({_, _, Val}) -> Val;
 unwrap(Val) -> Val.
 
-make_class(Visibility, Name, Body) -> #{visibility => Visibility, name => Name, body => Body}.
+bjoin(List) -> bjoin(List, <<".">>).
+bjoin(List, Delim) -> iolist_to_binary(intersperse(List, Delim)).
+
+intersperse([X], _D) -> [X];
+intersperse([X | Xs], D) -> [X, D | intersperse(Xs, D)].
