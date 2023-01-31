@@ -71,7 +71,6 @@ Terminals
   float
   annotation_name
 
-  '.*'
   ';'
   '{'
   '}'
@@ -299,9 +298,3 @@ fqn_list -> identifier ',' fqn_list : [unwrap('$1')] ++ unwrap('$3').
 Erlang code.
 unwrap({_, _, Val}) -> Val;
 unwrap(Val) -> Val.
-
-bjoin(List) -> bjoin(List, <<".">>).
-bjoin(List, Delim) -> iolist_to_binary(intersperse(List, Delim)).
-
-intersperse([X], _D) -> [X];
-intersperse([X | Xs], D) -> [X, D | intersperse(Xs, D)].

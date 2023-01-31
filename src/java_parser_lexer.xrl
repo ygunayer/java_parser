@@ -36,7 +36,6 @@ false      : {token, {false, TokenLine, token_as_atom(TokenChars)}}.
 \-?{DIGIT}+          : {token, {integer, TokenLine, list_to_integer(TokenChars)}}.
 \-?{DIGIT}\.{DIGIT}+ : {token, {float, TokenLine, list_to_float(TokenChars)}}.
 \;                   : {token, {';', TokenLine, TokenChars}}.
-\.\*                 : {token, {'.*', TokenLine, TokenChars}}.
 \{                   : {token, {'{', TokenLine, TokenChars}}.
 \}                   : {token, {'}', TokenLine, TokenChars}}.
 \,                   : {token, {',', TokenLine, TokenChars}}.
