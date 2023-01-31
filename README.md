@@ -16,8 +16,17 @@ Given a Java file `FooEnum.java` called with the following contents:
 ```java
 package com.yalingunayer.java_parser;
 
+/**
+ * Some comment
+ */
+@MarkerAnnotation
 public enum FooEnum {
+  // another comment
   FOO,
+
+  /**
+   * And a streaming comment
+   */
   BAR
 }
 ```
@@ -34,21 +43,14 @@ will be:
 
 ```elixir
 %{
-  package: :"com.yalingunayer.java_parser",
+  package: ["com", "yalingunayer", "java_parser"],
   imports: [],
   enum: %{
-    name: :FooEnum,
+    annotations: [{"MarkerAnnotation", []}],
+    name: "FooEnum",
     visibility: :public,
-    body: [
-      {
-        :enum_values,
-        [
-          %{name: :FOO, args: []},
-          %{name: :BAR, args: []}
-        ]
-      }
-    ]
-  }
+    values: ["FOO", "BAR"]
+  },
 }
 ```
 
