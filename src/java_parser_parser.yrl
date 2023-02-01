@@ -38,6 +38,8 @@ Nonterminals
 
   annotation
   annotations
+  annotation_args
+  named_annotation_args
   visibility
   type
   type_list
@@ -288,10 +290,18 @@ method_call -> fqn '::' identifier '(' expr_list ')' : {{'::', '$1', unwrap('$3'
 % Common
 annotation -> annotation_name : #{name => unwrap('$1')}.
 annotation -> annotation_name '(' ')' : #{name => unwrap('$1'), args => []}.
-annotation -> annotation_name '(' expr_list ')' : #{name => unwrap('$1'), args => '$3'}.
+annotation -> annotation_name '(' annotation_args ')' : #{name => unwrap('$1'), args => '$3'}.
 
 annotations -> annotation : ['$1'].
 annotations -> annotation annotations : ['$1'] ++ '$2'.
+
+annotation_args -> value : ['$1'].
+annotation_args -> fqn : ['$1'].
+annotation_args -> named_annotation_args : {named, '$1'}.
+annotation_args -> '{' fqn_list '}' : {list, '$2'}.
+
+named_annotation_args -> identifier '=' value : [{unwrap('$1'), '$3'}].
+named_annotation_args -> identifier '=' value ',' named_annotation_args : [{unwrap('$1'), '$3'}] ++ '$5'.
 
 visibility -> 'public' : public.
 visibility -> 'private' : private.

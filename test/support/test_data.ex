@@ -126,7 +126,12 @@ defmodule TestData do
         ],
         name: {:generic, "GenericClass", ["T"]},
         visibility: :public,
-        inheritance: %{name: {:generic, "GenericClass", ["T"]}, visibility: :public}
+        inheritance: %{extends: {:generic, "SomeOtherClass", ["T"]}, implements: ["Serializable"]},
+        annotations: [
+          %{args: [["RetentionPolicy", "RUNTIME"]], name: "Retention"},
+          %{args: [["ElementType", "FIELD"]], name: "Target"},
+          %{args: {:named, [{"callSuper", true}]}, name: "EqualsAndHashCode"}
+        ]
       },
       imports: [["com", "yalingunayer", "somepackage", "SomeClass"], ["com", "yalingunayer", "anotherpackage", "*"]],
       package: ["com", "yalingunayer", "java_parser"]

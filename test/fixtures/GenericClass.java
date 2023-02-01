@@ -3,6 +3,9 @@ package com.yalingunayer.java_parser;
 import com.yalingunayer.somepackage.SomeClass;
 import com.yalingunayer.anotherpackage.*;
 
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+@EqualsAndHashCode(callSuper = true)
 public class GenericClass<T> extends SomeOtherClass<T> implements Serializable {
   // some comment
   private static final int serialVersionUid = 1;
