@@ -108,9 +108,9 @@ defmodule TestData do
           field: %{default: 1, final: true, name: "serialVersionUid", static: true, type: "int", visibility: :private},
           field: %{name: "id", type: "int", visibility: :private},
           field: %{name: "name", type: "String", visibility: :private},
-          field: %{default: {:call, {["List", "of"], ["foo", "bar"]}}, final: true, name: "foos", type: {:generic, "List", ["String"]}, visibility: :private},
+          field: %{default: {:call, {["List", "of"], ["foo", "bar"]}}, final: true, name: "foos", type: {:generic, "List", ["String"]}, visibility: :private, annotations: [%{name: "Builder.Default"}]},
           method: %{args: [], body: [return: {:ref, ["this", "id"]}], name: "getId", type: "int", visibility: :public},
-          method: %{args: [], body: [return: {:ref, ["this", "name"]}], name: "getName", type: "String", visibility: :public},
+          method: %{args: [], body: [return: {:ref, ["this", "name"]}], name: "getName", type: "String", visibility: :public, annotations: [%{name: "Override"}]},
           method: %{args: [], body: [return: {:chain, {:call, {["this", "foos", "stream"], []}}}], name: "getFooFoos", type: {:generic, "List", ["String"]}, visibility: :public},
           method: %{
             args: [%{name: "a", type: "FooClass"}, %{name: "b", type: "FooClass"}],

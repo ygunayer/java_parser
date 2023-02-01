@@ -9,6 +9,8 @@ public class GenericClass<T> extends SomeOtherClass<T> implements Serializable {
 
   private int id;
   private String name;
+
+  @Builder.Default
   private final List<String> foos = List.of("foo", "bar");
 
   /**
@@ -20,6 +22,7 @@ public class GenericClass<T> extends SomeOtherClass<T> implements Serializable {
     return this.id;
   }
 
+  @Override
   public String getName() {
     return this.name;
   }

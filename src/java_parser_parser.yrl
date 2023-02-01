@@ -197,6 +197,7 @@ enum_value -> annotations identifier '(' expr_list ')' : #{name => unwrap('$2'),
 % Methods
 method_block -> method_signature '{' '}' : maps:merge(#{body => []}, '$1').
 method_block -> method_signature '{' method_body '}' : maps:merge(#{body => '$3'}, '$1').
+method_block -> annotations method_block : maps:merge(#{annotations => '$1'}, '$2').
 
 method_signature -> type identifier '(' ')' : #{type => '$1', name => unwrap('$2'), args => []}.
 method_signature -> type identifier '(' typed_args ')' : #{type => '$1', name => unwrap('$2'), args => '$4'}.
@@ -232,6 +233,8 @@ field -> visibility type identifier '=' expr :  #{visibility => '$1', type => '$
 field -> visibility 'static' type identifier '=' expr :  #{visibility => '$1', static => true, type => '$3', name => unwrap('$4'), default => '$6'}.
 field -> visibility 'final' type identifier '=' expr :  #{visibility => '$1', final => true, type => '$3', name => unwrap('$4'), default => '$6'}.
 field -> visibility 'static' 'final' type identifier '=' expr :  #{visibility => '$1', static => true, final => true, type => '$4', name => unwrap('$5'), default => '$7'}.
+
+field -> annotations field : maps:merge(#{annotations => '$1'}, '$2').
 
 % Values & Expressions
 value -> integer : unwrap('$1').
