@@ -11,5 +11,6 @@ public enum FooEnum {
   /**
    * And a streaming comment
    */
-  BAR
+  @SomeAnnotation("foo")
+  BAR,
 }

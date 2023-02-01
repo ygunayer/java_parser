@@ -2,14 +2,6 @@ defmodule JavaParserTest do
   use ExUnit.Case
   doctest JavaParser
 
-  test "should parse plain class" do
-    input = File.read!("test/fixtures/FooClass.java")
-
-    {:ok, parsed} = JavaParser.parse(input)
-
-    assert parsed == TestData.foo_class()
-  end
-
   test "should parse Vector2 class" do
     input = File.read!("test/fixtures/Vector2.java")
 
@@ -32,5 +24,13 @@ defmodule JavaParserTest do
     {:ok, parsed} = JavaParser.parse(input)
 
     assert parsed == TestData.fizz_string_returner()
+  end
+
+  test "should parse generic class" do
+    input = File.read!("test/fixtures/GenericClass.java")
+
+    {:ok, parsed} = JavaParser.parse(input)
+
+    assert parsed == TestData.generic_class()
   end
 end

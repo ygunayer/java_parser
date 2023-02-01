@@ -12,6 +12,8 @@ Nonterminals
   class_inheritance
   class_body
   class_body_item
+  class_type_decl
+  class_type_decls
 
   enum_block
   enum_signature
@@ -137,25 +139,32 @@ class_block -> class_signature '{' '}' : maps:merge('$1', #{body => []}).
 class_block -> class_signature '{' class_body '}' : maps:merge('$1', #{body => '$3'}).
 
 class_signature -> class_marker : '$1'.
+class_signature -> class_marker class_inheritance : maps:merge(#{inheritance => '$1'}, '$1').
 class_signature -> annotations class_marker : maps:merge(#{annotations => '$1'}, '$2').
 class_signature -> annotations class_marker class_inheritance : maps:merge(#{annotations => '$1', inheritance => '$3'}, '$2').
 
-class_marker -> 'class' identifier : #{name => unwrap('$2')}.
-class_marker -> 'abstract' 'class' identifier : #{name => unwrap('$3'), abstract => true}.
-class_marker -> 'final' 'class' identifier : #{name => unwrap('$3'), final => true}.
-class_marker -> visibility 'class' identifier : #{name => unwrap('$3'), visibility => '$1'}.
-class_marker -> visibility 'abstract' 'class' identifier : #{name => unwrap('$4'), visibility => '$1', abstract => true}.
-class_marker -> visibility 'final' 'class' identifier : #{name => unwrap('$4'), visibility => '$1', final => true}.
+class_marker -> 'class' class_type_decl : #{name => '$2'}.
+class_marker -> 'abstract' 'class' class_type_decl : #{name => '$3', abstract => true}.
+class_marker -> 'final' 'class' class_type_decl : #{name => '$3', final => true}.
+class_marker -> visibility 'class' class_type_decl : #{name => '$3', visibility => '$1'}.
+class_marker -> visibility 'abstract' 'class' class_type_decl : #{name => '$4', visibility => '$1', abstract => true}.
+class_marker -> visibility 'final' 'class' class_type_decl : #{name => '$4', visibility => '$1', final => true}.
 
-class_inheritance -> 'extends' fqn : #{extends => '$2'}.
-class_inheritance -> 'implements' fqn_list : #{implements => '$2'}.
-class_inheritance -> 'extends' fqn 'implements' fqn_list : #{extends => '$2', implements => '$4'}.
+class_inheritance -> 'extends' class_type_decl : #{extends => '$2'}.
+class_inheritance -> 'implements' class_type_decls : #{implements => '$2'}.
+class_inheritance -> 'extends' class_type_decl 'implements' class_type_decls : #{extends => '$2', implements => '$4'}.
 
 class_body -> class_body_item : ['$1'].
 class_body -> class_body_item class_body : ['$1'] ++ '$2'.
 
 class_body_item -> field ';' : {field, '$1'}.
 class_body_item -> method_block : {method, '$1'}.
+
+class_type_decl -> identifier : unwrap('$1').
+class_type_decl -> identifier '<' type_list '>' : {generic, unwrap('$1'), '$3'}.
+
+class_type_decls -> class_type_decl : ['$1'].
+class_type_decls -> class_type_decl ',' class_type_decls : ['$1'] ++ '$3'.
 
 % Top Level Enum Block
 enum_block -> enum_signature '{' '}' : maps:merge('$1', #{values => []}).
@@ -175,11 +184,15 @@ enum_inheritance -> 'implements' fqn_list : #{implements => '$2'}.
 enum_inheritance -> 'extends' fqn 'implements' fqn_list : #{extends => '$2', implements => '$4'}.
 
 enum_values -> enum_value : ['$1'].
+enum_values -> enum_value ',' : ['$1'].
 enum_values -> enum_value ',' enum_values : ['$1'] ++ '$3'.
 
-enum_value -> identifier : unwrap('$1').
-enum_value -> identifier '(' ')' : {unwrap('$1'), []}.
-enum_value -> identifier '(' expr_list ')' : {unwrap('$1'), '$3'}.
+enum_value -> identifier : #{name => unwrap('$1')}.
+enum_value -> identifier '(' ')' : #{name => unwrap('$1'), args => []}.
+enum_value -> identifier '(' expr_list ')' : #{name => unwrap('$1'), args => '$3'}.
+enum_value -> annotations identifier : #{name => unwrap('$2'), annotations => '$1'}.
+enum_value -> annotations identifier '(' ')' : #{name => unwrap('$2'), args => [], annotations => '$1'}.
+enum_value -> annotations identifier '(' expr_list ')' : #{name => unwrap('$2'), args => '$4', annotations => '$1'}.
 
 % Methods
 method_block -> method_signature '{' '}' : maps:merge(#{body => []}, '$1').
@@ -270,8 +283,9 @@ method_call -> fqn '::' identifier '(' ')' : {{'::', '$1', unwrap('$3')}, []}.
 method_call -> fqn '::' identifier '(' expr_list ')' : {{'::', '$1', unwrap('$3')}, '$4'}.
 
 % Common
-annotation -> annotation_name : {unwrap('$1'), []}.
-annotation -> annotation_name '(' ')' : {unwrap('$1'), []}.
+annotation -> annotation_name : #{name => unwrap('$1')}.
+annotation -> annotation_name '(' ')' : #{name => unwrap('$1'), args => []}.
+annotation -> annotation_name '(' expr_list ')' : #{name => unwrap('$1'), args => '$3'}.
 
 annotations -> annotation : ['$1'].
 annotations -> annotation annotations : ['$1'] ++ '$2'.
@@ -289,8 +303,8 @@ type_list -> type : ['$1'].
 type_list -> type ',' type_list : ['$1'] ++ '$3'.
 
 % Utility
-fqn -> identifier : [unwrap('$1')].
-fqn -> identifier '.' fqn : [unwrap('$1')] ++ '$3'.
+fqn -> identifier : unwrap('$1').
+fqn -> identifier '.' fqn : lists:flatten([unwrap('$1')] ++ ['$3']).
 
 fqn_list -> identifier : [unwrap('$1')].
 fqn_list -> identifier ',' fqn_list : [unwrap('$1')] ++ unwrap('$3').
