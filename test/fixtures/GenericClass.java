@@ -16,6 +16,8 @@ public class GenericClass<T> extends SomeOtherClass<T> implements Serializable {
   @Builder.Default
   private final List<String> foos = List.of("foo", "bar");
 
+  private final List<Integer> bars = new ArrayList<>();
+
   /**
    * Some JavaDoc here
    *

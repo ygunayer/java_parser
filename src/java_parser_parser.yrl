@@ -41,6 +41,7 @@ Nonterminals
   annotation_args
   named_annotation_args
   visibility
+  declared_type
   type
   type_list
 
@@ -278,8 +279,8 @@ lambda_expr -> '(' typed_args ')' '->' '{' method_body '}' : #{body => '$6', arg
 expr_list -> expr : ['$1'].
 expr_list -> expr ',' expr_list : ['$1'] ++ '$3'.
 
-method_call -> 'new' fqn '(' ')' : {new, '$2', []}.
-method_call -> 'new' fqn '(' expr_list ')' : {new, '$2', '$4'}.
+method_call -> 'new' declared_type '(' ')' : {new, '$2', []}.
+method_call -> 'new' declared_type '(' expr_list ')' : {new, '$2', '$4'}.
 method_call -> fqn '(' ')' : {'$1', []}.
 method_call -> fqn '(' expr_list ')' : {'$1', '$3'}.
 method_call -> fqn '.' identifier '(' ')' : {{'$1', unwrap('$3')}, []}.
@@ -307,8 +308,11 @@ visibility -> 'public' : public.
 visibility -> 'private' : private.
 visibility -> 'protected' : protected.
 
-type -> fqn : '$1'.
-type -> fqn '<' type_list '>' : {generic, '$1', '$3'}.
+declared_type -> fqn : '$1'.
+declared_type -> fqn '<' type_list '>' : {generic, '$1', '$3'}.
+declared_type -> fqn '<' '>' : {inferred_generic, '$1'}.
+
+type -> declared_type : '$1'.
 type -> type '[' ']' : {array, '$1'}.
 type -> type '...' : {varargs, '$1'}.
 

@@ -109,6 +109,7 @@ defmodule TestData do
           field: %{name: "id", type: "int", visibility: :private},
           field: %{name: "name", type: "String", visibility: :private},
           field: %{default: {:call, {["List", "of"], ["foo", "bar"]}}, final: true, name: "foos", type: {:generic, "List", ["String"]}, visibility: :private, annotations: [%{name: "Builder.Default"}]},
+          field: %{default: {:call, {:new, {:inferred_generic, "ArrayList"}, []}}, final: true, name: "bars", type: {:generic, "List", ["Integer"]}, visibility: :private},
           method: %{args: [], body: [return: {:ref, ["this", "id"]}], name: "getId", type: "int", visibility: :public},
           method: %{args: [], body: [return: {:ref, ["this", "name"]}], name: "getName", type: "String", visibility: :public, annotations: [%{name: "Override"}]},
           method: %{args: [], body: [return: {:chain, {:call, {["this", "foos", "stream"], []}}}], name: "getFooFoos", type: {:generic, "List", ["String"]}, visibility: :public},
